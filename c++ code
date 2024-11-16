@@ -1,0 +1,61 @@
+#include <iostream>
+#include <sstream>
+#include <unordered_map>
+#include <bitset>
+
+// Define opcode and register maps
+std::unordered_map<std::string, std::string> opcode_map = {
+    {"ADD", "0001"},
+    {"SUB", "0010"},
+    {"LOAD", "0011"},
+    {"STORE", "0100"},
+    {"HALT", "1111"}
+};
+
+std::unordered_map<std::string, std::string> register_map = {
+    {"R0", "000"},
+    {"R1", "001"},
+    {"R2", "010"},
+    {"R3", "011"},
+    {"R4", "100"},
+    {"R5", "101"},
+    {"R6", "110"},
+    {"R7", "111"}
+};
+
+std::string assemble(const std::string& instruction) {
+    std::istringstream iss(instruction);
+    std::string opcode, operand1, operand2, operand3;
+    iss >> opcode;
+    
+    if (opcode == "HALT") {
+        return opcode_map[opcode] + "00000000";  // HALT instruction (no operands)
+    }
+
+    iss >> operand1 >> operand2;
+    if (opcode == "LOAD" || opcode == "STORE") {
+        // For LOAD/STORE instructions, the second operand is a memory address
+        iss >> operand3;
+        return opcode_map[opcode] + register_map[operand1] + "0000" + std::bitset<4>(std::stoi(operand3, nullptr, 16)).to_string();
+    }
+
+    iss >> operand3; // Get the third operand for ADD, SUB, etc.
+    return opcode_map[opcode] + register_map[operand1] + register_map[operand2] + register_map[operand3];
+}
+
+int main() {
+    // Sample assembly code
+    std::string assembly_code[] = {
+        "ADD R1 R2 R3",        // ADD R1, R2, R3
+        "SUB R1 R4 R5",        // SUB R1, R4, R5
+        "LOAD R1 0x1000",      // LOAD R1, [0x1000]
+        "STORE R2 0x1004",     // STORE R2, [0x1004]
+        "HALT"                 // HALT
+    };
+
+    for (const std::string& line : assembly_code) {
+        std::cout << "Assembly: " << line << " --> Machine Code: " << assemble(line) << std::endl;
+    }
+
+    return 0;
+}
