@@ -1,0 +1,94 @@
+C++ Code: Virtual CPU Emulator
+
+#include <iostream>
+#include <vector>
+#include <string>
+#include <sstream>
+#include <unordered_map>
+
+class VirtualCPU {
+private:
+    int PC;                        // Program Counter
+    std::string IR;                // Instruction Register
+    std::vector<std::string> memory; // Instruction Memory
+    std::unordered_map<int, int> registers; // General-purpose registers (R0-R7)
+    bool running;                  // CPU running state
+
+public:
+    VirtualCPU(const std::vector<std::string>& program)
+        : PC(0), memory(program), running(true) {
+        // Initialize registers (R0 to R7) to 0
+        for (int i = 0; i < 8; ++i) {
+            registers[i] = 0;
+        }
+    }
+
+    void fetch() {
+        if (PC < memory.size()) {
+            IR = memory[PC]; // Fetch instruction at the current PC
+            std::cout << "Fetched Instruction: " << IR << "\n";
+            ++PC;           // Increment the PC to point to the next instruction
+        } else {
+            running = false; // Stop if PC goes out of bounds
+        }
+    }
+
+    void decodeAndExecute() {
+        if (IR.empty()) return;
+
+        std::istringstream iss(IR);
+        std::string opcode;
+        iss >> opcode;
+
+        if (opcode == "LOAD") {
+            int reg, value;
+            iss >> reg >> value;
+            registers[reg] = value;
+        } else if (opcode == "ADD") {
+            int reg1, reg2, reg3;
+            iss >> reg1 >> reg2 >> reg3;
+            registers[reg1] = registers[reg2] + registers[reg3];
+        } else if (opcode == "SUB") {
+            int reg1, reg2, reg3;
+            iss >> reg1 >> reg2 >> reg3;
+            registers[reg1] = registers[reg2] - registers[reg3];
+        } else if (opcode == "HALT") {
+            running = false;
+        } else {
+            std::cout << "Unknown instruction: " << opcode << "\n";
+        }
+    }
+
+    void run() {
+        while (running) {
+            fetch();
+            decodeAndExecute();
+            displayRegisters();
+        }
+    }
+
+    void displayRegisters() const {
+        std::cout << "Registers: ";
+        for (int i = 0; i < 8; ++i) {
+            std::cout << "R" << i << "=" << registers.at(i) << " ";
+        }
+        std::cout << "\n";
+    }
+};
+
+int main() {
+    // Example instruction set
+    std::vector<std::string> program = {
+        "LOAD 0 5",    // Load 5 into register R0
+        "LOAD 1 10",   // Load 10 into register R1
+        "ADD 2 0 1",   // Add R0 and R1, store in R2
+        "SUB 3 1 0",   // Subtract R0 from R1, store in R3
+        "HALT"         // Halt the CPU
+    };
+
+    // Create the virtual CPU with the program and run it
+    VirtualCPU cpu(program);
+    cpu.run();
+
+    return 0;
+}
