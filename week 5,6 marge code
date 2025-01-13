@@ -1,0 +1,125 @@
+#include <iostream>
+#include <vector>
+#include <stdexcept>
+#include <queue>
+#include <string>
+
+using namespace std;
+
+
+class Keyboard {
+public:
+    queue<string> inputBuffer;
+
+    void receiveInput(const string& input) {
+        inputBuffer.push(input);
+    }
+
+    string readInput() {
+        if (!inputBuffer.empty()) {
+            string data = inputBuffer.front();
+            inputBuffer.pop();
+            return data;
+        }
+        return "No Input";
+    }
+};
+
+
+class Display {
+public:
+    void output(const string& data) {
+        cout << "Display: " << data << endl;
+    }
+};
+
+
+class VirtualCPU {
+private:
+    vector<uint8_t> memory;
+    const size_t memorySize;
+    Keyboard* keyboard;
+    Display* display;
+
+public:
+    VirtualCPU(size_t size, Keyboard* kb, Display* dp)
+        : memorySize(size), keyboard(kb), display(dp) {
+        memory.resize(size, 0);
+    }
+
+    void writeMemory(size_t address, uint8_t data) {
+        if (address >= memorySize) {
+            throw out_of_range("Memory write out of bounds");
+        }
+        memory[address] = data;
+    }
+
+    uint8_t readMemory(size_t address) {
+        if (address >= memorySize) {
+            throw out_of_range("Memory read out of bounds");
+        }
+        return memory[address];
+    }
+
+    void displayMemory(size_t start = 0, size_t end = 0) {
+        if (end == 0 || end >= memorySize) end = memorySize - 1;
+        for (size_t i = start; i <= end; ++i) {
+            cout << "Address " << i << ": " << static_cast<int>(memory[i]) << endl;
+        }
+    }
+
+    void executeIOInstruction(const string& instruction) {
+        if (instruction == "READ") {
+            string data = keyboard->readInput();
+            cout << "CPU: Read data -> " << data << endl;
+        } else if (instruction == "WRITE") {
+            string data = "Hello from VirtualCPU!";
+            display->output(data);
+        } else {
+            cout << "CPU: Unknown instruction -> " << instruction << endl;
+        }
+    }
+
+    void processIOIntensiveProgram() {
+        for (int i = 0; i < 3; ++i) {
+            executeIOInstruction("READ");
+            executeIOInstruction("WRITE");
+        }
+    }
+};
+
+
+int main() {
+    try {
+
+        Keyboard keyboard;
+        Display display;
+
+
+        keyboard.receiveInput("1");
+        keyboard.receiveInput("2");
+        keyboard.receiveInput("3");
+
+
+        VirtualCPU vCPU(256, &keyboard, &display);
+
+
+        vCPU.writeMemory(10, 42);
+        vCPU.writeMemory(20, 84);
+
+        cout << "Data at address 10: " << static_cast<int>(vCPU.readMemory(10)) << endl;
+        cout << "Data at address 20: " << static_cast<int>(vCPU.readMemory(20)) << endl;
+
+        cout << "\nMemory Dump:" << endl;
+        vCPU.displayMemory(0, 30);
+
+
+        cout << "\nExecuting I/O-Intensive Program:" << endl;
+        vCPU.processIOIntensiveProgram();
+
+    } catch (const exception& e) {
+        cerr << "Error: " << e.what() << endl;
+    }
+
+    return 0;
+}
