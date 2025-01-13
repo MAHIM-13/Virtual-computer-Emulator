@@ -1,0 +1,62 @@
+#include <iostream>
+#include <vector>
+#include <stdexcept>
+
+class VirtualCPU {
+private:
+    std::vector<uint8_t> memory;
+    const size_t memorySize;
+
+public:
+
+    VirtualCPU(size_t size) : memorySize(size) {
+        memory.resize(size, 0);
+    }
+
+
+    void writeMemory(size_t address, uint8_t data) {
+        if (address >= memorySize) {
+            throw std::out_of_range("Memory write out of bounds");
+        }
+        memory[address] = data;
+    }
+
+
+    uint8_t readMemory(size_t address) {
+        if (address >= memorySize) {
+            throw std::out_of_range("Memory read out of bounds");
+        }
+        return memory[address];
+    }
+
+
+    void displayMemory(size_t start = 0, size_t end = 0) {
+        if (end == 0 || end >= memorySize) end = memorySize - 1;
+        for (size_t i = start; i <= end; ++i) {
+            std::cout << "Address " << i << ": " << static_cast<int>(memory[i]) << std::endl;
+        }
+    }
+};
+
+int main() {
+    try {
+
+        VirtualCPU vCPU(256);
+
+
+        vCPU.writeMemory(10, 42);
+        vCPU.writeMemory(20, 84);
+
+
+        std::cout << "Data at address 10: " << static_cast<int>(vCPU.readMemory(10)) << std::endl;
+        std::cout << "Data at address 20: " << static_cast<int>(vCPU.readMemory(20)) << std::endl;
+
+
+        std::cout << "\nMemory Dump:" << std::endl;
+        vCPU.displayMemory(0, 30);
+    } catch (const std::exception &e) {
+        std::cerr << "Error: " << e.what() << std::endl;
+    }
+
+    return 0;
+}
